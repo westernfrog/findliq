@@ -124,7 +124,7 @@ export default function Compass() {
           Math.cos(lat1) * Math.sin(lat2) -
           Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
         const bearing = (Math.atan2(y, x) * 180) / Math.PI;
-        setBearing((bearing - 90) % 360);
+        setBearing((bearing + 360) % 360);
       };
       calculateBearing();
     }
