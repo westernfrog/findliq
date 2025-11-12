@@ -9,6 +9,7 @@ export default function Compass() {
   const [deviceHeading, setDeviceHeading] = useState(0);
   const [needleRotation, setNeedleRotation] = useState(0);
   const [isFinding, setIsFinding] = useState(true);
+  const [needsPermission, setNeedsPermission] = useState(false);
   const [error, setError] = useState(null);
 
   const accumulatedRotation = useRef(0);
@@ -74,18 +75,7 @@ export default function Compass() {
 
     const requestOrientationPermission = async () => {
       if (typeof DeviceOrientationEvent.requestPermission === "function") {
-        try {
-          const permission = await DeviceOrientationEvent.requestPermission();
-          if (permission === "granted") {
-            window.addEventListener("deviceorientation", handleOrientation);
-          } else {
-            setError("Device orientation permission denied");
-            setIsFinding(false);
-          }
-        } catch (err) {
-          setError("Failed to request orientation permission");
-          setIsFinding(false);
-        }
+        setNeedsPermission(true);
       } else {
         window.addEventListener("deviceorientation", handleOrientation);
       }
@@ -97,6 +87,29 @@ export default function Compass() {
       window.removeEventListener("deviceorientation", handleOrientation);
     };
   }, []);
+
+  const handlePermissionRequest = async () => {
+    try {
+      const permission = await DeviceOrientationEvent.requestPermission();
+      if (permission === "granted") {
+        setNeedsPermission(false);
+        const handleOrientation = (event) => {
+          if (event.webkitCompassHeading) {
+            setDeviceHeading(event.webkitCompassHeading);
+          } else if (event.alpha !== null) {
+            setDeviceHeading(360 - event.alpha);
+          }
+        };
+        window.addEventListener("deviceorientation", handleOrientation);
+      } else {
+        setError("Device orientation permission denied");
+        setIsFinding(false);
+      }
+    } catch (err) {
+      setError("Failed to request orientation permission");
+      setIsFinding(false);
+    }
+  };
 
   useEffect(() => {
     if (userLocation && targetLocation) {
@@ -159,6 +172,25 @@ export default function Compass() {
     }
     return `${distance.toFixed(1)}km`;
   }, [userLocation, targetLocation]);
+
+  if (needsPermission) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center">
+        <div className="text-center p-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Enable Compass</h2>
+          <p className="text-gray-600 mb-6">
+            This app needs access to your device's compass to point you to the nearest liquor shop.
+          </p>
+          <button
+            onClick={handlePermissionRequest}
+            className="permission-button"
+          >
+            Enable Compass
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
