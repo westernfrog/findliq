@@ -132,7 +132,7 @@ export default function Compass() {
 
   useEffect(() => {
     if (!isFinding) {
-      const targetAngle = (bearing - deviceHeading + 360) % 360;
+      const targetAngle = (bearing - deviceHeading + 180) % 360;
 
       let diff = targetAngle - (lastTargetAngle.current % 360);
 
